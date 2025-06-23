@@ -1,6 +1,6 @@
 import { Client } from '@notionhq/client';
 import { parseAirbnb } from './airbnb.js';
-import { parseBooking } from './booking.js';
+import { parseBooking } from './booking.js'; // Reserved for later
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -12,22 +12,30 @@ const addToNotion = async (booking) => {
   const search = await notion.databases.query({
     database_id: databaseId,
     filter: {
-      property: 'ID',
+      property: 'ID_airbnb',
       rich_text: { equals: booking.ID }
     }
   });
-  if (search.results.length > 0) return;
+  if (search.results.length > 0) {
+    console.log(`🔁 Skipped (already exists): ${booking.ID}`);
+    return;
+  }
 
   await notion.pages.create({
     parent: { database_id: databaseId },
     properties: {
       Guest: { title: [{ text: { content: booking.Guest } }] },
-      Checkin: { date: { start: booking.Checkin } },
-      Checkout: { date: { start: booking.Checkout } },
-      Source: { select: { name: booking.Source } },
-      ID: { rich_text: [{ text: { content: booking.ID } }] }
+      'Check-in': { date: { start: booking.Checkin } },
+      'Check-out': { date: { start: booking.Checkout } },
+      'Prenotazione': { date: booking.Prenotazione }, // { start, end }
+      'Sito': { select: { name: booking.Source } },
+      'ID_airbnb': { rich_text: [{ text: { content: booking.ID } }] },
+      'url Prenotazione': booking.Url ? { url: booking.Url } : undefined,
+      'Telefono': booking.Phone ? { rich_text: [{ text: { content: booking.Phone } }] } : undefined
     }
   });
+
+  console.log(`✅ Synced: ${booking.ID}`);
 };
 
 const main = async () => {
@@ -36,18 +44,18 @@ const main = async () => {
   if (platform === 'all' || platform === 'airbnb') {
     tasks.push(parseAirbnb(process.env.AIRBNB_ICS));
   }
+
   if (platform === 'all' || platform === 'booking') {
-    tasks.push(parseBooking(process.env.BOOKING_ICS));
+    tasks.push(parseBooking(process.env.BOOKING_ICS)); // placeholder for future
   }
 
   const allBookings = (await Promise.all(tasks)).flat();
 
-  for (const b of allBookings) {
+  for (const booking of allBookings) {
     try {
-      await addToNotion(b);
-      console.log(`✅ Synced: ${b.ID}`);
+      await addToNotion(booking);
     } catch (err) {
-      console.error(`❌ Failed: ${b.ID}`, err.message);
+      console.error(`❌ Failed: ${booking.ID}`, err.message);
     }
   }
 };
