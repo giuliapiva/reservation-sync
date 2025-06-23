@@ -2,7 +2,8 @@ name: Sync Reservations to Notion
 
 on:
   schedule:
-    - cron: '0 * * * *'  # every hour
+    # - cron: '0 * ***' # every hour
+    - cron: '0 0 * * 0'  # every week
   workflow_dispatch:
     inputs:
       platform:
@@ -14,7 +15,6 @@ on:
           - all
           - airbnb
           - booking
-
 jobs:
   run-sync:
     runs-on: ubuntu-latest
