@@ -1,8 +1,10 @@
 import { Client } from '@notionhq/client';
 import { parseAirbnb } from './airbnb.js';
-import { parseBooking } from './booking.js'; // Reserved for later
+import { parseBooking } from './booking.js'; // placeholder for future
 import dotenv from 'dotenv';
 dotenv.config();
+
+console.log("👋 Airbnb sync script started...");
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const databaseId = process.env.DATABASE_ID;
@@ -16,6 +18,7 @@ const addToNotion = async (booking) => {
       rich_text: { equals: booking.ID }
     }
   });
+
   if (search.results.length > 0) {
     console.log(`🔁 Skipped (already exists): ${booking.ID}`);
     return;
@@ -39,25 +42,39 @@ const addToNotion = async (booking) => {
 };
 
 const main = async () => {
+  console.log("🔍 Starting main()...");
+
   const tasks = [];
 
   if (platform === 'all' || platform === 'airbnb') {
+    console.log("📥 Fetching Airbnb bookings...");
     tasks.push(parseAirbnb(process.env.AIRBNB_ICS));
   }
 
   if (platform === 'all' || platform === 'booking') {
+    console.log("📥 Fetching Booking.com bookings...");
     tasks.push(parseBooking(process.env.BOOKING_ICS)); // placeholder for future
   }
 
-  const allBookings = (await Promise.all(tasks)).flat();
+  console.log("⏳ Waiting for all parsers...");
+  const results = await Promise.all(tasks);
+
+  console.log("📦 Raw results from parsers:", results);
+
+  const allBookings = results.flat();
+
+  console.log(`🧾 Total parsed bookings: ${allBookings.length}`);
 
   for (const booking of allBookings) {
+    console.log(`➡️  Processing booking: ${booking.ID}`);
     try {
       await addToNotion(booking);
     } catch (err) {
       console.error(`❌ Failed: ${booking.ID}`, err.message);
     }
   }
+
+  console.log("✅ Sync complete.");
 };
 
 main();
