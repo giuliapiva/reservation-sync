@@ -1,0 +1,10 @@
+{
+  "name": "reservation-notion-sync",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "dependencies": {
+    "@notionhq/client": "^2.2.4",
+    "node-fetch": "^3.3.2"
+  }
+}
