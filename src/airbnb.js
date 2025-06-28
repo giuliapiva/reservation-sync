@@ -5,6 +5,7 @@ import fetch from 'node-fetch';
 const CACHE_DIR = 'ics';
 const CACHE_FILE = path.join(CACHE_DIR, 'airbnb.ics');
 const CACHE_MAX_AGE_MINUTES = 60;
+const useCached = false;
 
 async function isCacheFresh(filePath, maxMinutes) {
   try {
@@ -21,7 +22,7 @@ async function isCacheFresh(filePath, maxMinutes) {
 export const parseAirbnb = async (url) => {
   let text;
 
-  if (await isCacheFresh(CACHE_FILE, CACHE_MAX_AGE_MINUTES)) {
+  if (useCached || await isCacheFresh(CACHE_FILE, CACHE_MAX_AGE_MINUTES)) {
     console.log('💾 Using cached Airbnb .ics file');
     text = await fs.readFile(CACHE_FILE, 'utf-8');
   } else {
@@ -38,6 +39,9 @@ export const parseAirbnb = async (url) => {
     console.log('📥 Saved fresh .ics to cache');
   }
 
+  // 🧵 Unfold lines (handle soft-wrapping per RFC 5545)
+  text = text.replace(/\r?\n[ \t]/g, '');
+
   const events = text.split('BEGIN:VEVENT').slice(1);
   const bookings = [];
 
@@ -49,7 +53,7 @@ export const parseAirbnb = async (url) => {
     };
 
     const summary = getField('SUMMARY');
-    if (!summary || summary.toLowerCase().includes('block') || summary.toLowerCase().includes('unavailable')) {
+    if (!summary || summary.toLowerCase() !== 'reserved') {
       continue;
     }
 
@@ -58,14 +62,14 @@ export const parseAirbnb = async (url) => {
     const uid = getField('UID');
     const description = getField('DESCRIPTION') || '';
 
-    // Extract URL and phone number from DESCRIPTION
+    // ✅ Extract full values now that line is unfolded
     const urlMatch = description.match(/Reservation URL:\s*(https:\/\/[^\s\\]+)/i);
     const phoneMatch = description.match(/Phone Number \(Last 4 Digits\):\s*(\d{4})/i);
 
     const reservationUrl = urlMatch ? urlMatch[1] : null;
     const phoneSuffix = phoneMatch ? phoneMatch[1] : null;
 
-    const guest = 'Reserved'; // For Airbnb .ics Reserved summaries
+    const guest = 'Reserved';
     const id = `${checkin}_${guest.replace(/\s+/g, '_')}_Airbnb`;
 
     bookings.push({
