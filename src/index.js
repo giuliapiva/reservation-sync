@@ -1,6 +1,6 @@
 import { Client } from '@notionhq/client';
 import { parseAirbnb } from './airbnb.js';
-import { parseBooking } from './booking.js'; // placeholder for future
+import { parseBooking } from './booking.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -14,7 +14,7 @@ const addToNotion = async (booking) => {
   const search = await notion.databases.query({
     database_id: databaseId,
     filter: {
-      property: 'ID_airbnb',
+      property: 'ID',
       rich_text: { equals: booking.ID }
     }
   });
@@ -32,7 +32,7 @@ const addToNotion = async (booking) => {
       'Check-out': { date: { start: booking.Checkout } },
       'Prenotazione': { date: booking.Prenotazione }, // { start, end }
       'Sito': { select: { name: booking.Source } },
-      'ID_airbnb': { rich_text: [{ text: { content: booking.ID } }] },
+      'ID': { rich_text: [{ text: { content: booking.ID } }] },
       'url Prenotazione': booking.Url ? { url: booking.Url } : undefined,
       'Telefono': booking.Phone ? { rich_text: [{ text: { content: booking.Phone } }] } : undefined
     }
