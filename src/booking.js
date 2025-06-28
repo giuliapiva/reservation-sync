@@ -41,7 +41,6 @@ export const parseBooking = async (url) => {
     console.log('📥 Saved fresh .ics to cache');
   }
 
-  // Unfold multiline values
   text = text.replace(/\r?\n[ \t]/g, '');
 
   const events = text.split('BEGIN:VEVENT').slice(1);
@@ -49,26 +48,24 @@ export const parseBooking = async (url) => {
 
   for (const evt of events) {
     const getField = (tag) => {
-      const regex = new RegExp(`${tag}(;[^:]*)?:(.*?)\\r?\\n`, 'i');
+      const regex = new RegExp(`${tag}(;[^:]*)?:(.*?)\r?\n`, 'i');
       const match = evt.match(regex);
       return match ? match[2].trim() : null;
     };
 
     const checkin = getField('DTSTART');
     const checkout = getField('DTEND');
+    const summary = getField('SUMMARY') || 'Booked';
     const uid = getField('UID') || 'unknown';
 
     if (!checkin || !checkout) continue;
 
     const guest = 'Booked';
-    const url =
-      'https://admin.booking.com/hotel/hoteladmin/extranet_ng/manage/calendar/index.html?ses=185c96397508c1ca99f4774af9a0afd9&lang=it&hotel_id=11994497';
+    const url = 'https://admin.booking.com/hotel/hoteladmin/extranet_ng/manage/calendar/index.html?ses=185c96397508c1ca99f4774af9a0afd9&lang=it&hotel_id=11994497';
     const id = `${checkin}_${guest.replace(/\s+/g, '_')}_Booking`;
 
     bookings.push({
       Guest: guest,
-      Checkin: checkin,
-      Checkout: checkout,
       Source: 'Booking',
       ID: id,
       Url: url,

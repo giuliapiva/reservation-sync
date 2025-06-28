@@ -26,8 +26,6 @@ const addToNotion = async (booking) => {
 
   const props = {
     Guest: { title: [{ text: { content: booking.Guest } }] },
-    'Check-in': { date: { start: booking.Checkin } },
-    'Check-out': { date: { start: booking.Checkout } },
     'Prenotazione': { date: booking.Prenotazione },
     'Sito': { select: { name: booking.Source } },
     ID: { rich_text: [{ text: { content: booking.ID } }] },
