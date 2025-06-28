@@ -1,10 +1,10 @@
 import { Client } from '@notionhq/client';
-import { parseAirbnb } from './airbnb.js';
+import { parseAirbnb, parseAirbnbUnavailable } from './airbnb.js';
 import { parseBooking } from './booking.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
-console.log("👋 Airbnb sync script started...");
+console.log("👋 Reservation sync script started...");
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const databaseId = process.env.DATABASE_ID;
@@ -24,18 +24,21 @@ const addToNotion = async (booking) => {
     return;
   }
 
+  const props = {
+    Guest: { title: [{ text: { content: booking.Guest } }] },
+    'Check-in': { date: { start: booking.Checkin } },
+    'Check-out': { date: { start: booking.Checkout } },
+    'Prenotazione': { date: booking.Prenotazione },
+    'Sito': { select: { name: booking.Source } },
+    ID: { rich_text: [{ text: { content: booking.ID } }] },
+  };
+
+  if (booking.Url) props['url Prenotazione'] = { url: booking.Url };
+  if (booking.Phone) props['Telefono'] = { rich_text: [{ text: { content: booking.Phone } }] };
+
   await notion.pages.create({
     parent: { database_id: databaseId },
-    properties: {
-      Guest: { title: [{ text: { content: booking.Guest } }] },
-      'Check-in': { date: { start: booking.Checkin } },
-      'Check-out': { date: { start: booking.Checkout } },
-      'Prenotazione': { date: booking.Prenotazione }, // { start, end }
-      'Sito': { select: { name: booking.Source } },
-      'ID': { rich_text: [{ text: { content: booking.ID } }] },
-      'url Prenotazione': booking.Url ? { url: booking.Url } : undefined,
-      'Telefono': booking.Phone ? { rich_text: [{ text: { content: booking.Phone } }] } : undefined
-    }
+    properties: props,
   });
 
   console.log(`✅ Synced: ${booking.ID}`);
@@ -49,24 +52,21 @@ const main = async () => {
   if (platform === 'all' || platform === 'airbnb') {
     console.log("📥 Fetching Airbnb bookings...");
     tasks.push(parseAirbnb(process.env.AIRBNB_ICS));
+    tasks.push(parseAirbnbUnavailable(process.env.AIRBNB_ICS));
   }
 
   if (platform === 'all' || platform === 'booking') {
     console.log("📥 Fetching Booking.com bookings...");
-    tasks.push(parseBooking(process.env.BOOKING_ICS)); // placeholder for future
+    tasks.push(parseBooking(process.env.BOOKING_ICS));
   }
 
   console.log("⏳ Waiting for all parsers...");
   const results = await Promise.all(tasks);
 
-  console.log("📦 Raw results from parsers:", results);
-
   const allBookings = results.flat();
-
-  console.log(`🧾 Total parsed bookings: ${allBookings.length}`);
+  console.log(`📦 Raw parsed results: ${allBookings.length} entries`);
 
   for (const booking of allBookings) {
-    console.log(`➡️  Processing booking: ${booking.ID}`);
     try {
       await addToNotion(booking);
     } catch (err) {

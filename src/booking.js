@@ -1,11 +1,13 @@
 import fs from 'fs/promises';
 import path from 'path';
 import fetch from 'node-fetch';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const CACHE_DIR = 'ics';
 const CACHE_FILE = path.join(CACHE_DIR, 'booking.ics');
 const CACHE_MAX_AGE_MINUTES = 60;
-const useCached = true;
+const useCached = process.env.DEBUG_CACHE === 'true';
 
 async function isCacheFresh(filePath, maxMinutes) {
   try {
@@ -39,7 +41,7 @@ export const parseBooking = async (url) => {
     console.log('📥 Saved fresh .ics to cache');
   }
 
-  // Unfold multi-line fields
+  // Unfold multiline values
   text = text.replace(/\r?\n[ \t]/g, '');
 
   const events = text.split('BEGIN:VEVENT').slice(1);
@@ -54,13 +56,13 @@ export const parseBooking = async (url) => {
 
     const checkin = getField('DTSTART');
     const checkout = getField('DTEND');
-    const summary = getField('SUMMARY') || 'Booked';
     const uid = getField('UID') || 'unknown';
 
     if (!checkin || !checkout) continue;
 
     const guest = 'Booked';
-    const url = 'https://admin.booking.com/hotel/hoteladmin/extranet_ng/manage/calendar/index.html?ses=185c96397508c1ca99f4774af9a0afd9&lang=it&hotel_id=11994497';
+    const url =
+      'https://admin.booking.com/hotel/hoteladmin/extranet_ng/manage/calendar/index.html?ses=185c96397508c1ca99f4774af9a0afd9&lang=it&hotel_id=11994497';
     const id = `${checkin}_${guest.replace(/\s+/g, '_')}_Booking`;
 
     bookings.push({
@@ -76,6 +78,5 @@ export const parseBooking = async (url) => {
   }
 
   console.log(`✅ Parsed Booking.com bookings: ${bookings.length}`);
-  console.log(JSON.stringify(bookings, null, 2)); // ⬅️ Output preview
   return bookings;
 };
