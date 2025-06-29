@@ -1,3 +1,4 @@
+// airbnb.js
 import fs from 'fs/promises';
 import path from 'path';
 import fetch from 'node-fetch';
@@ -21,7 +22,7 @@ async function isCacheFresh(filePath, maxMinutes) {
   }
 }
 
-async function fetchOrReadICS(url) {
+export async function loadAirbnbICS(url) {
   let text;
   if (useCached || await isCacheFresh(CACHE_FILE, CACHE_MAX_AGE_MINUTES)) {
     console.log('💾 Using cached Airbnb .ics file');
@@ -39,7 +40,7 @@ async function fetchOrReadICS(url) {
     console.log('📥 Saved fresh .ics to cache');
   }
 
-  return text.replace(/\r?\n[ \t]/g, ''); // unfold lines
+  return text.replace(/\r?\n[ \t]/g, '');
 }
 
 function parseEvents(text) {
@@ -52,11 +53,7 @@ function getField(evt, tag) {
   return match ? match[2].trim() : null;
 }
 
-// 🔵 Reserved bookings
-export const parseAirbnb = async (url) => {
-  const text = await fetchOrReadICS(url);
-  if (!text) return [];
-
+export function parseAirbnb(text) {
   const events = parseEvents(text);
   const bookings = [];
 
@@ -78,8 +75,6 @@ export const parseAirbnb = async (url) => {
 
     bookings.push({
       Guest: guest,
-      Checkin: checkin,
-      Checkout: checkout,
       Source: 'Airbnb',
       ID: id,
       Url: reservationUrl,
@@ -90,13 +85,9 @@ export const parseAirbnb = async (url) => {
 
   console.log(`✅ Parsed Airbnb bookings: ${bookings.length}`);
   return bookings;
-};
+}
 
-// 🔴 Blocked unavailable ranges
-export const parseAirbnbUnavailable = async (url) => {
-  const text = await fetchOrReadICS(url);
-  if (!text) return [];
-
+export function parseAirbnbUnavailable(text) {
   const events = parseEvents(text);
   const blocks = [];
 
@@ -115,8 +106,6 @@ export const parseAirbnbUnavailable = async (url) => {
 
     blocks.push({
       Guest: guest,
-      Checkin: checkin,
-      Checkout: checkout,
       Source: source,
       ID: id,
       Url: url,
@@ -127,4 +116,4 @@ export const parseAirbnbUnavailable = async (url) => {
 
   console.log(`✅ Parsed Airbnb blocked dates: ${blocks.length}`);
   return blocks;
-};
+}

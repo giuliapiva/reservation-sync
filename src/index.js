@@ -1,5 +1,5 @@
 import { Client } from '@notionhq/client';
-import { parseAirbnb, parseAirbnbUnavailable } from './airbnb.js';
+import { loadAirbnbICS, parseAirbnb, parseAirbnbUnavailable } from './airbnb.js';
 import { parseBooking } from './booking.js';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -31,8 +31,13 @@ const addToNotion = async (booking) => {
     ID_ext: { rich_text: [{ text: { content: booking.ID } }] },
   };
 
-  if (booking.Url) props['url Prenotazione'] = { url: booking.Url };
-  if (booking.Phone) props['Telefono'] = { rich_text: [{ text: { content: booking.Phone } }] };
+  if (booking.Url) {
+    props['url Prenotazione'] = { url: booking.Url };
+  }
+
+  if (booking.Phone) {
+    props['Telefono'] = { rich_text: [{ text: { content: booking.Phone } }] };
+  }
 
   await notion.pages.create({
     parent: { database_id: databaseId },
@@ -48,9 +53,12 @@ const main = async () => {
   const tasks = [];
 
   if (platform === 'all' || platform === 'airbnb') {
-    console.log("📥 Fetching Airbnb bookings...");
-    tasks.push(parseAirbnb(process.env.AIRBNB_ICS));
-    tasks.push(parseAirbnbUnavailable(process.env.AIRBNB_ICS));
+    console.log("📥 Fetching Airbnb .ics...");
+    const airbnbText = await loadAirbnbICS(process.env.AIRBNB_ICS);
+
+    console.log("📦 Parsing Airbnb reservations...");
+    tasks.push(parseAirbnb(airbnbText));
+    tasks.push(parseAirbnbUnavailable(airbnbText));
   }
 
   if (platform === 'all' || platform === 'booking') {
