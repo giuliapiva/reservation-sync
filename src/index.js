@@ -1,6 +1,7 @@
 import { Client } from '@notionhq/client';
-import { loadAirbnbICS, parseAirbnb, parseAirbnbUnavailable } from './airbnb.js';
-import { parseBooking } from './booking.js';
+import { parseAirbnb, parseAirbnbUnavailable, exportAirbnbICS } from './airbnb.js';
+import { parseBooking, exportBookingICS } from './booking.js';
+import { exportPersonalICS } from './personal.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -54,8 +55,7 @@ const main = async () => {
 
   if (platform === 'all' || platform === 'airbnb') {
     console.log("📥 Fetching Airbnb .ics...");
-    const airbnbText = await loadAirbnbICS(process.env.AIRBNB_ICS);
-
+    const airbnbText = await exportAirbnbICS(); // This should internally fetch & write to ics/airbnb.ics
     console.log("📦 Parsing Airbnb reservations...");
     tasks.push(parseAirbnb(airbnbText));
     tasks.push(parseAirbnbUnavailable(airbnbText));
@@ -63,12 +63,17 @@ const main = async () => {
 
   if (platform === 'all' || platform === 'booking') {
     console.log("📥 Fetching Booking.com bookings...");
-    tasks.push(parseBooking(process.env.BOOKING_ICS));
+    const bookingData = await parseBooking(process.env.BOOKING_ICS);
+    tasks.push(Promise.resolve(bookingData));
+    await exportBookingICS(); // Save ics/booking.ics
+  }
+
+  if (platform === 'all' || platform === 'personal') {
+    await exportPersonalICS(); // Save ics/personal.ics
   }
 
   console.log("⏳ Waiting for all parsers...");
   const results = await Promise.all(tasks);
-
   const allBookings = results.flat();
   console.log(`📦 Raw parsed results: ${allBookings.length} entries`);
 
