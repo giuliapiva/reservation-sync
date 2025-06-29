@@ -15,6 +15,10 @@ const CACHE_FILE = path.join(CACHE_DIR, 'airbnb.ics');
 const CACHE_MAX_AGE_MINUTES = 60;
 const useCached = process.env.DEBUG_CACHE === 'true';
 
+// Icon URLs
+const AIRBNB_COLOR_ICON = 'https://raw.githubusercontent.com/giuliapiva/reservation-sync/refs/heads/main/icon/airbnb_color.svg';
+const AIRBNB_BW_ICON = 'https://raw.githubusercontent.com/giuliapiva/reservation-sync/refs/heads/main/icon/airbnb_bw.svg';
+
 async function isCacheFresh(filePath, maxMinutes) {
   try {
     const stats = await fs.stat(filePath);
@@ -40,9 +44,8 @@ export async function fetchAndCacheAirbnbICS(url) {
     if (!res.ok) {
       console.warn(`⚠️ Fetch failed (${res.status}). Attempting browser emulation...`);
       const { stdout, stderr } = await execFileAsync('node', ['src/airbnb-browser-fetch.js', url]);
-if (stdout) process.stdout.write(stdout);
-if (stderr) process.stderr.write(stderr);
-
+      if (stdout) process.stdout.write(stdout);
+      if (stderr) process.stderr.write(stderr);
     } else {
       const text = await res.text();
       await fs.mkdir(CACHE_DIR, { recursive: true });
@@ -106,7 +109,8 @@ export const parseAirbnb = async (icsPath) => {
       ID: id,
       Url: reservationUrl,
       Phone: phoneSuffix,
-      Prenotazione: { start: checkin, end: checkout }
+      Prenotazione: { start: checkin, end: checkout },
+      IconUrl: AIRBNB_COLOR_ICON
     });
   }
 
@@ -141,7 +145,8 @@ export const parseAirbnbUnavailable = async (icsPath) => {
       ID: id,
       Url: url,
       Phone: null,
-      Prenotazione: { start: checkin, end: checkout }
+      Prenotazione: { start: checkin, end: checkout },
+      IconUrl: AIRBNB_BW_ICON
     });
   }
 

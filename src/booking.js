@@ -1,3 +1,4 @@
+// src/booking.js
 import fs from 'fs/promises';
 import path from 'path';
 import fetch from 'node-fetch';
@@ -8,6 +9,9 @@ const CACHE_DIR = 'ics';
 const CACHE_FILE = path.join(CACHE_DIR, 'booking.ics');
 const CACHE_MAX_AGE_MINUTES = 60;
 const useCached = process.env.DEBUG_CACHE === 'true';
+
+// Icon URL
+const BOOKING_ICON = 'https://raw.githubusercontent.com/giuliapiva/reservation-sync/refs/heads/main/icon/booking.svg';
 
 async function isCacheFresh(filePath, maxMinutes) {
   try {
@@ -70,7 +74,8 @@ export const parseBooking = async (url) => {
       ID: id,
       Url: url,
       Phone: null,
-      Prenotazione: { start: checkin, end: checkout }
+      Prenotazione: { start: checkin, end: checkout },
+      IconUrl: BOOKING_ICON
     });
   }
 

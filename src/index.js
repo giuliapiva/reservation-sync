@@ -44,9 +44,19 @@ const addToNotion = async (booking) => {
     props['Telefono'] = { rich_text: [{ text: { content: booking.Phone } }] };
   }
 
+  // Set icon if available
+  let icon = undefined;
+  if (booking.IconUrl) {
+    icon = {
+      type: 'external',
+      external: { url: booking.IconUrl }
+    };
+  }
+
   await notion.pages.create({
     parent: { database_id: databaseId },
     properties: props,
+    ...(icon ? { icon } : {})
   });
 
   console.log(`✅ Synced: ${booking.ID}`);
