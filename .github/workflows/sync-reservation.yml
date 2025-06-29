@@ -42,3 +42,12 @@ jobs:
           BOOKING_ICS: ${{ secrets.BOOKING_ICS }}
           PLATFORM: ${{ github.event.inputs.platform || 'all' }}
           DEBUG_CACHE: false
+
+      - name: Commit and push changes
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --cached --quiet || (git commit -m "chore: update .ics files from reservation-sync" && git push https://x-access-token:${GH_PAT}@github.com/${{ github.repository }} HEAD:${{ github.ref }})
