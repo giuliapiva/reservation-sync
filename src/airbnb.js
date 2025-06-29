@@ -132,7 +132,7 @@ export const parseAirbnbUnavailable = async (icsPath) => {
 
     const guest = 'Airbnb (Not available)';
     const source = 'Airbnb (Block)';
-    const url = 'https://www.airbnb.com/multicalendar/1148520485615870610/availability-settings';
+    const url = 'https://www.airbnb.com/multicalendar/1148520485615870610';
     const id = `${checkin}_${guest.replace(/\s+/g, '_')}_Airbnb`;
 
     blocks.push({

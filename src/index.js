@@ -3,7 +3,10 @@ import { Client } from '@notionhq/client';
 import { fetchAndCacheAirbnbICS, parseAirbnb, parseAirbnbUnavailable } from './airbnb.js';
 import { parseBooking } from './booking.js';
 import { exportPersonalICS } from './personal.js';
+import { updateStatuses } from './set-status.js';
 import dotenv from 'dotenv';
+import fs from 'fs/promises';
+import path from 'path';
 dotenv.config();
 
 console.log("👋 Reservation sync script started...");
@@ -53,6 +56,7 @@ const main = async () => {
   console.log("🔍 Starting main()...");
 
   const tasks = [];
+  let allBookings = [];
 
   let airbnbICSPath = null;
   if (platform === 'all' || platform === 'airbnb') {
@@ -74,8 +78,15 @@ const main = async () => {
 
   console.log("⏳ Waiting for all parsers...");
   const results = await Promise.all(tasks);
-  const allBookings = results.flat();
+  allBookings = results.flat();
   console.log(`📦 Raw parsed results: ${allBookings.length} entries`);
+
+  // Save all current reservation IDs to a JSON file for set-status.js
+  const currentIDs = allBookings.map(b => b.ID);
+  const jsonPath = path.join('ics', 'current_reservations.json');
+  await fs.mkdir('ics', { recursive: true });
+  await fs.writeFile(jsonPath, JSON.stringify(currentIDs, null, 2), 'utf-8');
+  console.log(`💾 Saved current reservation IDs to ${jsonPath}`);
 
   for (const booking of allBookings) {
     try {
@@ -84,6 +95,9 @@ const main = async () => {
       console.error(`❌ Failed: ${booking.ID}`, err.message);
     }
   }
+
+  // Call set-status logic after syncing
+  await updateStatuses();
 
   console.log("✅ Sync complete.");
 };

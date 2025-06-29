@@ -1,3 +1,4 @@
+// src/personal.js
 import { Client } from '@notionhq/client';
 import dotenv from 'dotenv';
 import fs from 'fs/promises';
@@ -26,6 +27,12 @@ export const exportPersonalICS = async () => {
   try {
     const response = await notion.databases.query({
       database_id: databaseId,
+      filter: {
+        and: [
+          { property: 'Tipo', select: { equals: 'Personal' } },
+          { property: 'Status', select: { does_not_equal: 'Archiviata' } }
+        ]
+      }
     });
 
     pages = response.results || [];
@@ -39,14 +46,9 @@ export const exportPersonalICS = async () => {
 
   for (const page of pages) {
     const props = page.properties;
-    const tipo = props['Tipo']?.select?.name;
     const guest = props['Guest']?.title?.[0]?.text?.content;
     const id = props['ID']?.formula?.string;
     const prenotazione = props['Prenotazione']?.date;
-
-    if (tipo !== 'Personal') {
-      continue;
-    }
 
     if (!prenotazione?.start || !prenotazione?.end || !id) {
       console.log(`⚠️ Skipping entry with missing fields: ${guest}`);
