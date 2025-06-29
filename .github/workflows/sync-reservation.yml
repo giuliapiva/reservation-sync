@@ -41,3 +41,4 @@ jobs:
           AIRBNB_ICS: ${{ secrets.AIRBNB_ICS }}
           BOOKING_ICS: ${{ secrets.BOOKING_ICS }}
           PLATFORM: ${{ github.event.inputs.platform || 'all' }}
+          DEBUG_CACHE: false
