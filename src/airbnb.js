@@ -1,3 +1,4 @@
+// src/airbnb.js
 import fs from 'fs/promises';
 import path from 'path';
 import fetch from 'node-fetch';
@@ -26,35 +27,40 @@ async function isCacheFresh(filePath, maxMinutes) {
   }
 }
 
-async function fetchOrReadICS(url) {
-  let text;
-
+// This function fetches and caches the Airbnb ICS file ONCE per run.
+// It returns the path to the cached file.
+export async function fetchAndCacheAirbnbICS(url) {
   if (useCached || await isCacheFresh(CACHE_FILE, CACHE_MAX_AGE_MINUTES)) {
     console.log('💾 Using cached Airbnb .ics file');
-    text = await fs.readFile(CACHE_FILE, 'utf-8');
-  } else {
-    console.log('🌐 Downloading fresh Airbnb .ics file');
-    try {
-      const res = await fetch(url);
-      if (!res.ok) {
-        console.warn(`⚠️ Fetch failed (${res.status}). Attempting browser emulation...`);
-
-        // Try fallback script
-        await execFileAsync('node', ['src/airbnb-browser-fetch.js', url]);
-        text = await fs.readFile(CACHE_FILE, 'utf-8');
-      } else {
-        text = await res.text();
-        await fs.mkdir(CACHE_DIR, { recursive: true });
-        await fs.writeFile(CACHE_FILE, text, 'utf-8');
-        console.log('📥 Saved fresh .ics to cache');
-      }
-    } catch (err) {
-      console.error('❌ Fetch failed:', err.message);
-      return '';
-    }
+    return CACHE_FILE;
   }
+  console.log('🌐 Downloading fresh Airbnb .ics file');
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.warn(`⚠️ Fetch failed (${res.status}). Attempting browser emulation...`);
+      await execFileAsync('node', ['src/airbnb-browser-fetch.js', url]);
+    } else {
+      const text = await res.text();
+      await fs.mkdir(CACHE_DIR, { recursive: true });
+      await fs.writeFile(CACHE_FILE, text, 'utf-8');
+      console.log('📥 Saved fresh .ics to cache');
+    }
+  } catch (err) {
+    console.error('❌ Fetch failed:', err.message);
+    return '';
+  }
+  return CACHE_FILE;
+}
 
-  return text.replace(/\r?\n[ \t]/g, ''); // unfold lines
+async function readICSFile(filePath) {
+  try {
+    const text = await fs.readFile(filePath, 'utf-8');
+    return text.replace(/\r?\n[ \t]/g, ''); // unfold lines
+  } catch (err) {
+    console.error('❌ Failed to read ICS file:', err.message);
+    return '';
+  }
 }
 
 function parseEvents(text) {
@@ -68,8 +74,8 @@ function getField(evt, tag) {
 }
 
 // 🔵 Reserved bookings
-export const parseAirbnb = async (url) => {
-  const text = await fetchOrReadICS(url);
+export const parseAirbnb = async (icsPath) => {
+  const text = await readICSFile(icsPath);
   if (!text) return [];
 
   const events = parseEvents(text);
@@ -106,8 +112,8 @@ export const parseAirbnb = async (url) => {
 };
 
 // 🔴 Unavailable blocks
-export const parseAirbnbUnavailable = async (url) => {
-  const text = await fetchOrReadICS(url);
+export const parseAirbnbUnavailable = async (icsPath) => {
+  const text = await readICSFile(icsPath);
   if (!text) return [];
 
   const events = parseEvents(text);
@@ -139,5 +145,3 @@ export const parseAirbnbUnavailable = async (url) => {
   console.log(`✅ Parsed Airbnb blocked dates: ${blocks.length}`);
   return blocks;
 };
-
-export const loadAirbnbICS = fetchOrReadICS;

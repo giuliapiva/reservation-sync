@@ -1,5 +1,3 @@
-// src/personal.js
-
 import { Client } from '@notionhq/client';
 import dotenv from 'dotenv';
 import fs from 'fs/promises';
@@ -21,7 +19,7 @@ const formatDate = (yyyymmdd) => {
   return `${yyyymmdd}T000000Z`;
 };
 
-const exportPersonalICS = async () => {
+export const exportPersonalICS = async () => {
   console.log('📤 Exporting Personal events to ICS...');
 
   let pages = [];
@@ -75,5 +73,3 @@ END:VEVENT`;
 
   console.log(`✅ Saved to ${icsPath} (${personalEvents.length} events)`);
 };
-
-exportPersonalICS();
