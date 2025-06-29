@@ -41,12 +41,12 @@ const exportPersonalICS = async () => {
 
   for (const page of pages) {
     const props = page.properties;
-    const sito = props['Sito']?.select?.name;
+    const tipo = props['Tipo']?.select?.name;
     const guest = props['Guest']?.title?.[0]?.text?.content;
-    const id = props['ID']?.rich_text?.[0]?.text?.content;
+    const id = props['ID']?.formula?.string;
     const prenotazione = props['Prenotazione']?.date;
 
-    if (sito !== 'Personal') {
+    if (tipo !== 'Personal') {
       continue;
     }
 
