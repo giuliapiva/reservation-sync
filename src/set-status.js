@@ -93,13 +93,11 @@ export async function updateStatuses() {
   });
 
   // 4. Filter for next check-in assignment:
-  //    - tipo != "Airbnb (Block)"
-  //    - tipo != "Personal"
   //    - status != "Cancellata"
   const candidates = pages.filter(page => {
     const tipo = page.properties['Tipo']?.select?.name;
     const status = page._localStatus;
-    return tipo !== 'Airbnb (Block)' && tipo !== 'Personal' && status !== 'Cancellata';
+    return status !== 'Cancellata';
   });
 
   // 5. Find the earliest future check-in among candidates
