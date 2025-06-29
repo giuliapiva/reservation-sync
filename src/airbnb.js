@@ -39,7 +39,10 @@ export async function fetchAndCacheAirbnbICS(url) {
     const res = await fetch(url);
     if (!res.ok) {
       console.warn(`⚠️ Fetch failed (${res.status}). Attempting browser emulation...`);
-      await execFileAsync('node', ['src/airbnb-browser-fetch.js', url]);
+      const { stdout, stderr } = await execFileAsync('node', ['src/airbnb-browser-fetch.js', url]);
+if (stdout) process.stdout.write(stdout);
+if (stderr) process.stderr.write(stderr);
+
     } else {
       const text = await res.text();
       await fs.mkdir(CACHE_DIR, { recursive: true });
