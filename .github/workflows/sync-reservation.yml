@@ -4,7 +4,6 @@ on:
   schedule:
     - cron: '0 7 * * *' # every day at 7 AM
     # - cron: '0 * ***' # every hour
-    # - cron: '0 0 * * 0'  # every week
   workflow_dispatch:
     inputs:
       platform:
@@ -24,6 +23,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_PAT }}  # ✅ Use PAT for write access
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -34,11 +35,22 @@ jobs:
         run: npm install
 
       - name: Run sync script
-        run: node src/index.js
+        run: node src/index.js && node src/personal.js
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          DATABASE_ID: ${{ secrets.DATABASE_ID }}
+          DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
           AIRBNB_ICS: ${{ secrets.AIRBNB_ICS }}
           BOOKING_ICS: ${{ secrets.BOOKING_ICS }}
           PLATFORM: ${{ github.event.inputs.platform || 'all' }}
           DEBUG_CACHE: false
+
+      - name: Commit and push generated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ics/personal.ics
+          git commit -m "🔁 Auto-update personal.ics"
+          git push
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com

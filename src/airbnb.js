@@ -1,9 +1,13 @@
-// airbnb.js
 import fs from 'fs/promises';
 import path from 'path';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+
 dotenv.config();
+
+const execFileAsync = promisify(execFile);
 
 const CACHE_DIR = 'ics';
 const CACHE_FILE = path.join(CACHE_DIR, 'airbnb.ics');
@@ -22,25 +26,35 @@ async function isCacheFresh(filePath, maxMinutes) {
   }
 }
 
-export async function loadAirbnbICS(url) {
+async function fetchOrReadICS(url) {
   let text;
+
   if (useCached || await isCacheFresh(CACHE_FILE, CACHE_MAX_AGE_MINUTES)) {
     console.log('💾 Using cached Airbnb .ics file');
     text = await fs.readFile(CACHE_FILE, 'utf-8');
   } else {
     console.log('🌐 Downloading fresh Airbnb .ics file');
-    const res = await fetch(url);
-    if (!res.ok) {
-      console.error(`Failed to fetch .ics from Airbnb: ${res.status} ${res.statusText}`);
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.warn(`⚠️ Fetch failed (${res.status}). Attempting browser emulation...`);
+
+        // Try fallback script
+        await execFileAsync('node', ['src/airbnb-browser-fetch.js', url]);
+        text = await fs.readFile(CACHE_FILE, 'utf-8');
+      } else {
+        text = await res.text();
+        await fs.mkdir(CACHE_DIR, { recursive: true });
+        await fs.writeFile(CACHE_FILE, text, 'utf-8');
+        console.log('📥 Saved fresh .ics to cache');
+      }
+    } catch (err) {
+      console.error('❌ Fetch failed:', err.message);
       return '';
     }
-    text = await res.text();
-    await fs.mkdir(CACHE_DIR, { recursive: true });
-    await fs.writeFile(CACHE_FILE, text, 'utf-8');
-    console.log('📥 Saved fresh .ics to cache');
   }
 
-  return text.replace(/\r?\n[ \t]/g, '');
+  return text.replace(/\r?\n[ \t]/g, ''); // unfold lines
 }
 
 function parseEvents(text) {
@@ -53,7 +67,11 @@ function getField(evt, tag) {
   return match ? match[2].trim() : null;
 }
 
-export function parseAirbnb(text) {
+// 🔵 Reserved bookings
+export const parseAirbnb = async (url) => {
+  const text = await fetchOrReadICS(url);
+  if (!text) return [];
+
   const events = parseEvents(text);
   const bookings = [];
 
@@ -85,9 +103,13 @@ export function parseAirbnb(text) {
 
   console.log(`✅ Parsed Airbnb bookings: ${bookings.length}`);
   return bookings;
-}
+};
 
-export function parseAirbnbUnavailable(text) {
+// 🔴 Unavailable blocks
+export const parseAirbnbUnavailable = async (url) => {
+  const text = await fetchOrReadICS(url);
+  if (!text) return [];
+
   const events = parseEvents(text);
   const blocks = [];
 
@@ -116,4 +138,6 @@ export function parseAirbnbUnavailable(text) {
 
   console.log(`✅ Parsed Airbnb blocked dates: ${blocks.length}`);
   return blocks;
-}
+};
+
+export const loadAirbnbICS = fetchOrReadICS;
