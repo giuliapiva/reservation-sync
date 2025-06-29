@@ -37,7 +37,7 @@ jobs:
         run: node src/index.js
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          DATABASE_ID: ${{ secrets.DATABASE_ID }}
           AIRBNB_ICS: ${{ secrets.AIRBNB_ICS }}
           BOOKING_ICS: ${{ secrets.BOOKING_ICS }}
           PLATFORM: ${{ github.event.inputs.platform || 'all' }}
