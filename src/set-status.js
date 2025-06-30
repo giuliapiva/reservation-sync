@@ -74,6 +74,7 @@ export async function updateStatuses() {
     const status = props['Status']?.select?.name;
     const prenotazione = props['Prenotazione']?.date;
     const endDate = prenotazione?.end;
+    const tipo = props['Tipo']?.select?.name;
 
     let newStatus = status;
 
@@ -83,7 +84,8 @@ export async function updateStatuses() {
     } else if (id && currentIDSet.has(id)) {
       if (status !== 'Confermata') newStatus = 'Confermata';
     } else {
-      if (status === 'Confermata') newStatus = 'Cancellata';
+      // Only set to Cancellata if not Personal
+      if (status === 'Confermata' && tipo !== 'Personal') newStatus = 'Cancellata';
     }
 
     return {
@@ -95,7 +97,6 @@ export async function updateStatuses() {
   // 4. Filter for next check-in assignment:
   //    - status != "Cancellata"
   const candidates = pages.filter(page => {
-    const tipo = page.properties['Tipo']?.select?.name;
     const status = page._localStatus;
     return status !== 'Cancellata';
   });
