@@ -9,19 +9,19 @@ A Node.js automation tool to sync Airbnb and Booking.com reservations into a Not
 
 ## ✨ Features
 
-- ✅ Sync reservations from Airbnb `.ics` feed  
-- ✅ Sync reservations from Booking.com `.ics` feed  
-- ✅ Create Notion entries with guest info, reservation dates, and source  
-- ✅ Avoid duplicates using a unique ID formula  
-- ✅ Sync “Airbnb (Not available)” blocks as separate entries  
-- ✅ Export `Personal`-tagged Notion events to `.ics`  
-- ✅ Automatically assign icons in Notion for each source  
-- ✅ Reservation status management (Confermata, Cancellata, Archiviata)  
-- ✅ Automatically archive past reservations  
-- ✅ Highlight the next upcoming check-in  
-- ✅ Generate WhatsApp links for guest phone numbers  
-- ✅ GitHub Actions support to automate syncing daily at 7 AM  
-- ✅ Local `.env` support for testing and debugging
+- Sync reservations from Airbnb `.ics` feed  
+- Sync reservations from Booking.com `.ics` feed  
+- Create Notion entries with guest info, reservation dates, and source  
+- Avoid duplicates using a unique ID formula  
+- Sync “Airbnb (Not available)” blocks as separate entries  
+- Export `Personal`-tagged Notion events to `.ics`  
+- Automatically assign icons in Notion for each source  
+- Reservation status management (Confermata, Cancellata, Archiviata)  
+- Automatically archive past reservations  
+- Highlight the next upcoming check-in  
+- Generate WhatsApp links for guest phone numbers  
+- GitHub Actions support to automate syncing daily at 7 AM  
+- Local `.env` support for testing and debugging
 
 ---
 
