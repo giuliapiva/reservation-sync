@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import { isCacheFreshFromSync, updateFileTimestamp } from './sync-utils.js';
 dotenv.config();
 
 const CACHE_DIR = 'ics';
@@ -13,22 +14,10 @@ const useCached = process.env.DEBUG_CACHE === 'true';
 // Icon URL
 const BOOKING_ICON = 'https://raw.githubusercontent.com/giuliapiva/reservation-sync/refs/heads/main/icon/booking.svg';
 
-async function isCacheFresh(filePath, maxMinutes) {
-  try {
-    const stats = await fs.stat(filePath);
-    const now = new Date();
-    const mtime = new Date(stats.mtime);
-    const ageMinutes = (now - mtime) / (1000 * 60);
-    return ageMinutes < maxMinutes;
-  } catch {
-    return false;
-  }
-}
-
 export const parseBooking = async (url) => {
   let text;
 
-  if (useCached || await isCacheFresh(CACHE_FILE, CACHE_MAX_AGE_MINUTES)) {
+  if (useCached || await isCacheFreshFromSync('booking.ics', CACHE_MAX_AGE_MINUTES)) {
     console.log('💾 Using cached Booking.com .ics file');
     text = await fs.readFile(CACHE_FILE, 'utf-8');
   } else {
@@ -42,6 +31,7 @@ export const parseBooking = async (url) => {
 
     await fs.mkdir(CACHE_DIR, { recursive: true });
     await fs.writeFile(CACHE_FILE, text, 'utf-8');
+    await updateFileTimestamp('booking.ics');
     console.log('📥 Saved fresh .ics to cache');
   }
 

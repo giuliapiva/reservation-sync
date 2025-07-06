@@ -5,6 +5,7 @@ import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { isCacheFreshFromSync, updateFileTimestamp } from './sync-utils.js';
 
 dotenv.config();
 
@@ -19,22 +20,10 @@ const useCached = process.env.DEBUG_CACHE === 'true';
 const AIRBNB_COLOR_ICON = 'https://raw.githubusercontent.com/giuliapiva/reservation-sync/refs/heads/main/icon/airbnb_color.svg';
 const AIRBNB_BW_ICON = 'https://raw.githubusercontent.com/giuliapiva/reservation-sync/refs/heads/main/icon/airbnb_bw.svg';
 
-async function isCacheFresh(filePath, maxMinutes) {
-  try {
-    const stats = await fs.stat(filePath);
-    const now = new Date();
-    const mtime = new Date(stats.mtime);
-    const ageMinutes = (now - mtime) / (1000 * 60);
-    return ageMinutes < maxMinutes;
-  } catch {
-    return false;
-  }
-}
-
 // This function fetches and caches the Airbnb ICS file ONCE per run.
 // It returns the path to the cached file.
 export async function fetchAndCacheAirbnbICS(url) {
-  if (useCached || await isCacheFresh(CACHE_FILE, CACHE_MAX_AGE_MINUTES)) {
+  if (useCached || await isCacheFreshFromSync('airbnb.ics', CACHE_MAX_AGE_MINUTES)) {
     console.log('💾 Using cached Airbnb .ics file');
     return CACHE_FILE;
   }
@@ -46,10 +35,13 @@ export async function fetchAndCacheAirbnbICS(url) {
       const { stdout, stderr } = await execFileAsync('node', ['src/airbnb-browser-fetch.js', url]);
       if (stdout) process.stdout.write(stdout);
       if (stderr) process.stderr.write(stderr);
+      // Browser emulation handles timestamp update internally
+      console.log('📥 Browser emulation completed');
     } else {
       const text = await res.text();
       await fs.mkdir(CACHE_DIR, { recursive: true });
       await fs.writeFile(CACHE_FILE, text, 'utf-8');
+      await updateFileTimestamp('airbnb.ics');
       console.log('📥 Saved fresh .ics to cache');
     }
   } catch (err) {

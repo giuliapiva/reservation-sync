@@ -3,6 +3,9 @@ import fs from 'fs/promises';
 import fetch from 'node-fetch';
 import path from 'path';
 
+// Import sync utilities
+import { updateFileTimestamp } from './sync-utils.js';
+
 const url = process.argv[2];
 const CACHE_DIR = 'ics';
 const CACHE_FILE = path.join(CACHE_DIR, 'airbnb.ics');
@@ -28,6 +31,7 @@ try {
 
   await fs.mkdir(CACHE_DIR, { recursive: true });
   await fs.writeFile(CACHE_FILE, text, 'utf-8');
+  await updateFileTimestamp('airbnb.ics');
 
   console.log(`✅ Saved Airbnb .ics (browser) to ${CACHE_FILE}`);
 } catch (err) {

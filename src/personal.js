@@ -3,6 +3,7 @@ import { Client } from '@notionhq/client';
 import dotenv from 'dotenv';
 import fs from 'fs/promises';
 import path from 'path';
+import { isCacheFreshFromSync, updateFileTimestamp } from './sync-utils.js';
 
 dotenv.config();
 
@@ -22,6 +23,12 @@ const formatDate = (yyyymmdd) => {
 
 export const exportPersonalICS = async () => {
   console.log('📤 Exporting Personal events to ICS...');
+
+  // Check if we should use cached data
+  if (process.env.DEBUG_CACHE === 'true' || await isCacheFreshFromSync('personal.ics', 60)) {
+    console.log('💾 Using cached Personal .ics file');
+    return;
+  }
 
   let pages = [];
   try {
@@ -72,6 +79,7 @@ END:VEVENT`;
   const icsPath = path.join('ics', 'personal.ics');
   await fs.mkdir('ics', { recursive: true });
   await fs.writeFile(icsPath, icsContent, 'utf-8');
+  await updateFileTimestamp('personal.ics');
 
   console.log(`✅ Saved to ${icsPath} (${personalEvents.length} events)`);
 };

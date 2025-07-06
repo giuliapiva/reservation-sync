@@ -4,6 +4,7 @@ import { fetchAndCacheAirbnbICS, parseAirbnb, parseAirbnbUnavailable } from './a
 import { parseBooking } from './booking.js';
 import { exportPersonalICS } from './personal.js';
 import { updateStatuses } from './set-status.js';
+import { displayCacheStatus } from './sync-utils.js';
 import dotenv from 'dotenv';
 import fs from 'fs/promises';
 import path from 'path';
@@ -64,6 +65,9 @@ const addToNotion = async (booking) => {
 
 const main = async () => {
   console.log("🔍 Starting main()...");
+  
+  // Display current cache status
+  await displayCacheStatus();
 
   const tasks = [];
   let allBookings = [];
