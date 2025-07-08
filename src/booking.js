@@ -56,7 +56,8 @@ export const parseBooking = async (url) => {
 
     const guest = 'Booked';
     const url = 'https://admin.booking.com/hotel/hoteladmin/extranet_ng/manage/calendar/index.html?ses=185c96397508c1ca99f4774af9a0afd9&lang=it&hotel_id=11994497';
-    const id = `${checkin}_${guest.replace(/\s+/g, '_')}_Booking`;
+    // ID: startdate_enddate_bk
+    const id = `${checkin}_${checkout}_Booking`;
 
     bookings.push({
       Guest: guest,

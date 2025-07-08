@@ -93,7 +93,8 @@ export const parseAirbnb = async (icsPath) => {
     const reservationUrl = urlMatch ? urlMatch[1] : null;
     const phoneSuffix = phoneMatch ? phoneMatch[1] : null;
     const guest = 'Reserved';
-    const id = `${checkin}_${guest.replace(/\s+/g, '_')}_Airbnb`;
+    // ID: startdate_enddate_Airbnb
+    const id = `${checkin}_${checkout}_Airbnb`;
 
     bookings.push({
       Guest: guest,
@@ -126,10 +127,16 @@ export const parseAirbnbUnavailable = async (icsPath) => {
     const checkout = getField(evt, 'DTEND');
     if (!checkin || !checkout) continue;
 
+    // New check: skip if a block with the same end date already exists
+    if (blocks.some(b => b.Prenotazione.end === checkout)) {
+      continue;
+    }
+
     const guest = 'Airbnb (Not available)';
     const source = 'Airbnb (Block)';
     const url = 'https://www.airbnb.com/multicalendar/1148520485615870610';
-    const id = `${checkin}_${guest.replace(/\s+/g, '_')}_Airbnb`;
+    // ID: startdate_enddate_AirbnbBlock
+    const id = `${checkout}_AirbnbBlock`;
 
     blocks.push({
       Guest: guest,
